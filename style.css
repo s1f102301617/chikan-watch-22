@@ -25,7 +25,7 @@ h1 {
 
 .grid { 
     display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
     gap: 20px; 
 }
 
@@ -51,51 +51,51 @@ h1 {
     border-left: 5px solid #e91916; 
 }
 
-/* リンクの青色を解除 */
+/* 配信者情報リンク */
 .streamer-link {
     text-decoration: none !important;
-    color: #efeff1 !important; /* 強制的に白っぽく */
-    display: flex;
-    align-items: flex-start;
-}
-
-.streamer-link:visited, .streamer-link:active {
     color: #efeff1 !important;
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
 }
 
 .avatar { 
-    width: 64px; 
-    height: 64px; 
+    width: 50px; 
+    height: 50px; 
     border-radius: 50%; 
-    margin-right: 15px; 
+    margin-right: 12px; 
     background: #333; 
     flex-shrink: 0;
     border: 2px solid #333;
 }
 
-.info { 
-    flex: 1; 
-    min-width: 0; 
-}
+.info { flex: 1; min-width: 0; }
 
 .name-row { 
     display: flex; 
     align-items: center; 
     justify-content: space-between; 
-    margin-bottom: 4px;
 }
 
 .name { 
     font-weight: bold; 
-    font-size: 1.15em; 
+    font-size: 1.1em; 
     white-space: nowrap; 
     overflow: hidden; 
     text-overflow: ellipsis;
-    color: #efeff1;
 }
 
-.card:hover .name {
-    color: #bf94ff; /* ホバー時に名前を紫に */
+/* ライブ用サムネイル画像 */
+.live-thumb {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background-color: #000;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 1px solid #444;
+    object-fit: cover;
+    display: block;
 }
 
 .game { 
@@ -107,24 +107,25 @@ h1 {
 
 .stream-title { 
     font-size: 0.8em; 
-    color: #adadb8; 
+    color: #efeff1; 
     line-height: 1.4; 
     display: -webkit-box; 
     -webkit-line-clamp: 2; 
     -webkit-box-orient: vertical; 
     overflow: hidden; 
+    margin-bottom: 6px;
 }
 
 .viewers { 
     color: #e91916; 
     font-size: 0.8em; 
     font-weight: bold; 
-    margin-top: 8px; 
+    margin-bottom: 10px;
 }
 
-/* クリップのデザイン */
+/* クリップセクション */
 .clip-section {
-    margin-top: 16px;
+    margin-top: auto; /* カードの下部に配置 */
     border-top: 1px solid #333;
     padding-top: 12px;
 }
@@ -140,38 +141,30 @@ h1 {
 .clip-link {
     text-decoration: none;
     display: block;
-    color: inherit;
 }
 
-.clip-thumb {
+.clip-thumb-img {
     width: 100%;
     aspect-ratio: 16 / 9;
     background-size: cover;
     background-position: center;
-    border-radius: 8px;
-    margin-bottom: 8px;
-    border: 1px solid #333;
-    transition: opacity 0.2s;
-}
-
-.clip-link:hover .clip-thumb {
-    opacity: 0.8;
+    border-radius: 6px;
+    margin-bottom: 6px;
 }
 
 .clip-title {
     font-size: 0.75em;
-    color: #efeff1;
-    line-height: 1.3;
+    color: #adadb8;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
+/* ラベル */
 .label { 
     font-size: 0.65em; 
     padding: 2px 6px; 
     border-radius: 4px; 
-    font-weight: bold;
 }
 .label-live { background: #e91916; color: white; }
 .label-off { background: #333; color: #adadb8; }
