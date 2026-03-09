@@ -1,3 +1,9 @@
+// 【メンテナンス用】トークンが切れたら以下のURLをブラウザで叩いて新しく取得し、ACCESS_TOKEN を書き換える
+// https://id.twitch.tv/oauth2/authorize?client_id=pl16vkiwvra455r0bd35vw1jlxaoe9&redirect_uri=http://localhost&response_type=token&scope=
+// 取得した access_token= の後ろの英数字を下の変数値に貼り付ける
+
+// ...以下、元のコードが続く
+
 const CLIENT_ID = 'pl16vkiwvra455r0bd35vw1jlxaoe9'; 
 const ACCESS_TOKEN = '6gz8vdeee0u7w1yy26zon3ovey18tu'; 
 
