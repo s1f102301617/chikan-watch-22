@@ -1,23 +1,13 @@
-// 【メンテナンス用】トークンが切れたら以下のURLをブラウザで叩いて新しく取得し、ACCESS_TOKEN を書き換える
-// https://id.twitch.tv/oauth2/authorize?client_id=pl16vkiwvra455r0bd35vw1jlxaoe9&redirect_uri=http://localhost&response_type=token&scope=
-// 取得した access_token= の後ろの英数字を下の変数値に貼り付ける
-
-// ...以下、元のコードが続く
-
 const CLIENT_ID = 'pl16vkiwvra455r0bd35vw1jlxaoe9'; 
 const ACCESS_TOKEN = '6gz8vdeee0u7w1yy26zon3ovey18tu'; 
 
 async function updateLiveStatus() {
     const listContainer = document.getElementById('list');
-    
     try {
         const resStreamers = await fetch('streamers.json');
         const streamers = await resStreamers.json();
         const ids = streamers.map(s => s.id);
-
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const startedAt = sevenDaysAgo.toISOString();
+        const startedAt = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
         const userRes = await fetch(`https://api.twitch.tv/helix/users?${ids.map(id => `login=${id}`).join('&')}`, {
             headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${ACCESS_TOKEN}` }
@@ -37,22 +27,22 @@ async function updateLiveStatus() {
                 const clipRes = await fetch(`https://api.twitch.tv/helix/clips?broadcaster_id=${u.id}&started_at=${startedAt}&first=1`, {
                     headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${ACCESS_TOKEN}` }
                 });
-                const clipData = await clipRes.json();
-                if (clipData.data && clipData.data.length > 0) clip = clipData.data[0];
+                const cData = await clipRes.json();
+                if (cData.data && cData.data.length > 0) clip = cData.data[0];
             }
             return { ...s, u, live, clip, viewCount: u ? parseInt(u.view_count) : 0 };
         }));
 
+        // 並び順は変えず（同接順/再生数順）
         const liveList = fullData.filter(d => d.live).sort((a, b) => b.live.viewer_count - a.live.viewer_count);
         const offlineList = fullData.filter(d => !d.live).sort((a, b) => b.viewCount - a.viewCount);
 
         listContainer.innerHTML = `
             <div class="section-title">Online</div>
-            <div class="stream-list">${liveList.map(d => renderRow(d)).join('') || '<p style="padding:10px;color:#555;">No one is live</p>'}</div>
+            <div class="list-area">${liveList.map(d => renderRow(d)).join('')}</div>
             <div class="section-title">Offline</div>
-            <div class="stream-list">${offlineList.map(d => renderRow(d)).join('')}</div>
+            <div class="list-area">${offlineList.map(d => renderRow(d)).join('')}</div>
         `;
-
     } catch (e) { console.error(e); }
 }
 
@@ -60,29 +50,33 @@ function renderRow(d) {
     const isLive = !!d.live;
     const name = d.u ? d.u.display_name : d.name;
     const icon = d.u ? d.u.profile_image_url : '';
+    const thumb = isLive ? d.live.thumbnail_url.replace('{width}','320').replace('{height}','180') : 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
 
     return `
         <a href="https://twitch.tv/${d.id}" target="_blank" class="item">
-            <div class="user-area">
+            <div class="thumb-area">
+                <img src="${thumb}" class="live-img">
+            </div>
+            <div class="avatar-area">
                 <img src="${icon}" class="avatar">
-                <span class="name">${name}</span>
             </div>
-            <div class="content-area">
-                ${isLive ? `
-                    <span class="game-name">${d.live.game_name}</span>
-                    <span class="stream-title">${d.live.title}</span>
-                ` : `
-                    <span class="stream-title" style="color:#555;">@${d.id}</span>
-                `}
+            <div class="info-area">
+                <div class="name-row">
+                    <span class="name">${name}</span>
+                </div>
+                <span class="stream-title">${isLive ? d.live.title : '（オフライン）'}</span>
+                <div class="meta-info">
+                    ${isLive ? `ゲーム: ${d.live.game_name}` : `ID: @${d.id}`}
+                </div>
+                ${d.clip ? `
+                    <div class="clip-row">
+                        <img src="${d.clip.thumbnail_url}" class="clip-thumb">
+                        <div class="clip-info">🔥 最近の人気クリップ: ${d.clip.title}</div>
+                    </div>
+                ` : ''}
             </div>
-            <div class="stats-area">
-                ${isLive ? `
-                    <span class="viewers">${d.live.viewer_count.toLocaleString()}</span>
-                    <img src="${d.live.thumbnail_url.replace('{width}','160').replace('{height}','90')}" class="live-thumb">
-                ` : `
-                    <span class="label-off">OFFLINE</span>
-                `}
-                ${d.clip ? `<img src="${d.clip.thumbnail_url}" class="clip-thumb" title="Recent Clip: ${d.clip.title}">` : ''}
+            <div class="count-area">
+                <div class="viewer-num">${isLive ? d.live.viewer_count.toLocaleString() : '-'}</div>
             </div>
         </a>
     `;
