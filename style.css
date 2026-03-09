@@ -3,16 +3,27 @@ body {
     color: #efeff1; 
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
     margin: 0; 
-    padding: 10px; 
+    padding: 0; /* bodyのパディングを消してヘッダーを横いっぱいに */
+}
+
+/* サイト全体を中央に寄せるための箱 */
+.container {
+    max-width: 900px; /* ここで横幅を制限（お好みで 800px〜1000px） */
+    margin: 0 auto;   /* 左右の余白を自動にして中央寄せ */
+    padding: 0 15px;  /* スマホの時に端がくっつかないように */
 }
 
 h1 { 
     font-size: 1.2em; 
     color: #9146ff; 
-    padding: 15px;
+    padding: 20px 0;
     margin: 0;
     text-align: center;
+    background: #0e0e10;
     border-bottom: 1px solid #2f2f35;
+    position: sticky; /* スクロールしても上に残るように */
+    top: 0;
+    z-index: 100;
 }
 
 .section-title { 
@@ -21,67 +32,67 @@ h1 {
     font-size: 0.8em; 
     color: #adadb8; 
     border-bottom: 1px solid #2f2f35;
-    margin-top: 10px;
+    margin-top: 20px;
+    border-radius: 4px 4px 0 0;
 }
 
-/* 1行のアイテム */
+/* リストエリア */
+.list-area {
+    background: #1f1f23; /* リスト全体に少し背景色をつけて、左右の隙間と区別 */
+    border-radius: 0 0 4px 4px;
+    overflow: hidden;
+}
+
 .item { 
     display: flex;
-    padding: 12px;
-    border-bottom: 1px solid #1f1f23;
+    padding: 15px;
+    border-bottom: 1px solid #0e0e10;
     text-decoration: none;
     color: inherit;
-    align-items: center; /* 中央揃えで綺麗に */
+    align-items: center;
     transition: background 0.1s;
 }
 
-.item:hover { background: #1f1f23; }
+.item:hover { background: #26262c; }
 
-/* 配信中のみ表示されるサムネ */
+/* 配信中サムネ */
 .thumb-area { 
-    width: 140px; 
+    width: 160px; 
     flex-shrink: 0; 
-    margin-right: 15px; 
+    margin-right: 20px; 
 }
 .live-img { 
     width: 100%; 
     aspect-ratio: 16/9; 
     border-radius: 4px; 
     object-fit: cover; 
-    border: 1px solid #333; 
 }
 
 /* アイコン */
 .avatar-area { 
-    width: 40px; 
+    width: 44px; 
     flex-shrink: 0; 
-    margin-right: 12px; 
+    margin-right: 15px; 
 }
 .avatar { 
-    width: 40px; 
-    height: 40px; 
+    width: 44px; 
+    height: 44px; 
     border-radius: 50%; 
 }
 
-/* メイン情報 */
 .info-area { 
     flex: 1; 
     min-width: 0; 
 }
-.name-row { 
-    display: flex; 
-    align-items: center; 
-    gap: 8px; 
-}
 .name { 
     font-weight: bold; 
-    font-size: 1em; 
+    font-size: 1.05em; 
 }
 .stream-title { 
-    font-size: 0.85em; 
+    font-size: 0.9em; 
     color: #efeff1; 
     display: block; 
-    margin: 2px 0;
+    margin: 4px 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -91,39 +102,37 @@ h1 {
     color: #adadb8; 
 }
 
-/* 右側：視聴者数 */
 .count-area { 
-    width: 90px; 
+    width: 100px; 
     text-align: right; 
     flex-shrink: 0; 
 }
 .viewer-num { 
-    font-size: 1.3em; 
+    font-size: 1.4em; 
     font-weight: bold; 
     color: #e91916; 
 }
 
-/* クリップ（配信タイトルの下） */
 .clip-row {
-    margin-top: 6px;
+    margin-top: 8px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: #18181b;
-    padding: 4px 8px;
+    gap: 10px;
+    background: #0e0e10;
+    padding: 5px 10px;
     border-radius: 4px;
 }
 .clip-thumb { 
-    width: 50px; 
+    width: 60px; 
     aspect-ratio: 16/9; 
     border-radius: 2px; 
 }
 .clip-info {
-    font-size: 0.7em;
+    font-size: 0.75em;
     color: #bf94ff;
     font-weight: bold;
 }
 
-@media (max-width: 600px) {
-    .thumb-area { display: none; } /* スマホではサムネ無しでさらに高密度に */
+@media (max-width: 768px) {
+    .thumb-area { display: none; }
 }
