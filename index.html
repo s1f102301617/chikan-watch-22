@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8"><title>置換界隈LIVE</title>
+    <style>
+        body { background: #1a1a1a; color: white; font-family: sans-serif; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; padding: 20px; }
+        .card { background: #2a2a2a; padding: 15px; border-radius: 10px; text-decoration: none; color: white; text-align: center; transition: 0.3s; }
+        .card:hover { transform: scale(1.05); }
+        .live { border: 2px solid #9146ff; box-shadow: 0 0 10px #9146ff; }
+        .label { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-top: 10px; }
+        .label-live { background: #e91916; }
+        .label-off { background: #555; }
+    </style>
+</head>
+<body>
+    <h1 style="text-align:center;">置換界隈 LIVE状況</h1>
+    <div id="list" class="grid"></div>
+</body>
+</html>
