@@ -9,12 +9,11 @@ async function updateLiveStatus() {
         const streamers = await resStreamers.json();
         const ids = streamers.map(s => s.id);
 
-        // 7日前の日付を取得（ISO 8601形式）
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         const startedAt = sevenDaysAgo.toISOString();
 
-        // 1. ユーザー情報を取得
+        // 1. ユーザー情報（アイコン・総再生数）
         const userQuery = ids.map(id => `login=${id}`).join('&');
         const resUsers = await fetch(`https://api.twitch.tv/helix/users?${userQuery}`, {
             headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${ACCESS_TOKEN}` }
@@ -22,7 +21,7 @@ async function updateLiveStatus() {
         const userData = await resUsers.json();
         const usersInfo = userData.data || [];
 
-        // 2. 配信情報を取得
+        // 2. 配信情報（視聴者数・サムネ）
         const streamQuery = ids.map(id => `user_login=${id}`).join('&');
         const resTwitch = await fetch(`https://api.twitch.tv/helix/streams?${streamQuery}`, {
             headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${ACCESS_TOKEN}` }
@@ -30,14 +29,13 @@ async function updateLiveStatus() {
         const twitchData = await resTwitch.json();
         const liveStreams = twitchData.data || [];
 
-        // 3. 各配信者のデータを統合し、直近7日間のクリップを取得
+        // 3. 各自のデータを統合・クリップ取得
         const fullData = await Promise.all(streamers.map(async (s) => {
             const userInfo = usersInfo.find(u => u.login === s.id);
             const liveInfo = liveStreams.find(ls => ls.user_login === s.id);
             
             let topClip = null;
             if (userInfo) {
-                // started_at を追加して過去7日間に限定
                 const clipRes = await fetch(`https://api.twitch.tv/helix/clips?broadcaster_id=${userInfo.id}&started_at=${startedAt}&first=1`, {
                     headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${ACCESS_TOKEN}` }
                 });
@@ -52,14 +50,15 @@ async function updateLiveStatus() {
                 id: s.id,
                 live: liveInfo,
                 icon: userInfo ? userInfo.profile_image_url : '',
-                clip: topClip
+                clip: topClip,
+                // オフライン時の並び替え指標（総再生数）
+                viewCount: userInfo ? parseInt(userInfo.view_count) : 0
             };
         }));
 
-        fullData.sort((a, b) => (b.live ? 1 : 0) - (a.live ? 1 : 0));
-
-        const liveList = fullData.filter(d => d.live);
-        const offlineList = fullData.filter(d => !d.live);
+        // 4. 並び替え：配信中は同接順、オフラインは再生数順
+        const liveList = fullData.filter(d => d.live).sort((a, b) => b.live.viewer_count - a.live.viewer_count);
+        const offlineList = fullData.filter(d => !d.live).sort((a, b) => b.viewCount - a.viewCount);
 
         listContainer.innerHTML = `
             <div class="section-title">配信中 (${liveList.length})</div>
@@ -98,9 +97,9 @@ function renderCard(d) {
                 <a href="https://twitch.tv/${d.id}" target="_blank" style="text-decoration:none; color:inherit;">
                     <img src="${thumbUrl}" class="live-thumb">
                     <div class="stream-title">${d.live.title}</div>
-                    <div class="viewers">● ${d.live.viewer_count.toLocaleString()} 人が視聴中</div>
+                    <div class="viewers">● ${d.live.viewer_count.toLocaleString()} 人</div>
                 </a>
-            ` : ''}
+            ` : `<div class="stats">総再生数: ${d.viewCount.toLocaleString()}</div>`}
             
             ${d.clip ? `
                 <div class="clip-section">

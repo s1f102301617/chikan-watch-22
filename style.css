@@ -123,9 +123,15 @@ h1 {
     margin-bottom: 10px;
 }
 
+.followers {
+    font-size: 0.75em;
+    color: #adadb8;
+    margin-top: 4px;
+}
+
 /* クリップセクション */
 .clip-section {
-    margin-top: auto; /* カードの下部に配置 */
+    margin-top: auto; 
     border-top: 1px solid #333;
     padding-top: 12px;
 }
