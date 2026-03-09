@@ -6,93 +6,105 @@ async function updateLiveStatus() {
     const listContainer = document.getElementById('list');
     
     try {
-        // 1. 配信者リストを読み込む
         const resStreamers = await fetch('streamers.json');
         const streamers = await resStreamers.json();
         const ids = streamers.map(s => s.id);
 
-        // 2. Twitch APIから配信情報を取得
-        const query = ids.map(id => `user_login=${id}`).join('&');
-        const resTwitch = await fetch(`https://api.twitch.tv/helix/streams?${query}`, {
-            headers: {
-                'Client-ID': CLIENT_ID,
-                'Authorization': `Bearer ${ACCESS_TOKEN}`
-            }
-        });
-        const twitchData = await resTwitch.json();
-        const liveStreams = twitchData.data || [];
-
-        // 3. ユーザー情報（アイコンURL）を取得
+        // 1. ユーザー情報を取得（内部ID: broadcaster_id を得るため）
         const userQuery = ids.map(id => `login=${id}`).join('&');
         const resUsers = await fetch(`https://api.twitch.tv/helix/users?${userQuery}`, {
-            headers: {
-                'Client-ID': CLIENT_ID,
-                'Authorization': `Bearer ${ACCESS_TOKEN}`
-            }
+            headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${ACCESS_TOKEN}` }
         });
         const userData = await resUsers.json();
         const usersInfo = userData.data || [];
 
-        // 4. データを統合
-        const fullData = streamers.map(s => {
-            const liveInfo = liveStreams.find(ls => ls.user_login === s.id);
-            const userInfo = usersInfo.find(u => u.login === s.id);
-            return {
-                ...s,
-                live: liveInfo,
-                icon: userInfo ? userInfo.profile_image_url : 'https://static-cdn.jtvnw.net/user-default-pictures-uv/ce559792-4299-4613-8405-5ad239604461-profile_image-70x70.png'
-            };
+        // 2. 配信情報を取得
+        const streamQuery = ids.map(id => `user_login=${id}`).join('&');
+        const resTwitch = await fetch(`https://api.twitch.tv/helix/streams?${streamQuery}`, {
+            headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${ACCESS_TOKEN}` }
         });
+        const twitchData = await resTwitch.json();
+        const liveStreams = twitchData.data || [];
 
-        // 5. 並び替え（配信中を上、オフラインを下）
+        // 3. 直近の人気クリップを取得（各ユーザー1件ずつ）
+        // ※一度に全員分取れないため、上位5名分などの代表的なものを取得する形にします
+        const fullData = await Promise.all(streamers.map(async (s) => {
+            const userInfo = usersInfo.find(u => u.login === s.id);
+            const liveInfo = liveStreams.find(ls => ls.user_login === s.id);
+            
+            let topClip = null;
+            if (userInfo) {
+                // 過去7日間の人気クリップを1件取得
+                const clipRes = await fetch(`https://api.twitch.tv/helix/clips?broadcaster_id=${userInfo.id}&first=1`, {
+                    headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${ACCESS_TOKEN}` }
+                });
+                const clipData = await clipRes.json();
+                if (clipData.data && clipData.data.length > 0) {
+                    topClip = clipData.data[0];
+                }
+            }
+
+            return {
+                displayName: userInfo ? userInfo.display_name : s.name,
+                id: s.id,
+                live: liveInfo,
+                icon: userInfo ? userInfo.profile_image_url : '',
+                clip: topClip
+            };
+        }));
+
+        // 4. 並び替え
         fullData.sort((a, b) => (b.live ? 1 : 0) - (a.live ? 1 : 0));
 
-        // 6. HTMLの生成と流し込み
+        // 5. HTML生成
         const liveList = fullData.filter(d => d.live);
         const offlineList = fullData.filter(d => !d.live);
 
         listContainer.innerHTML = `
             <div class="section-title">配信中 (${liveList.length})</div>
-            <div class="grid">
-                ${liveList.length > 0 ? liveList.map(d => renderCard(d)).join('') : '<p style="padding-left:20px; color:#888;">現在配信中のメンバーはいません</p>'}
-            </div>
-            
+            <div class="grid">${liveList.map(d => renderCard(d)).join('') || '<p>配信中のメンバーはいません</p>'}</div>
             <div class="section-title">オフライン</div>
-            <div class="grid">
-                ${offlineList.map(d => renderCard(d)).join('')}
-            </div>
+            <div class="grid">${offlineList.map(d => renderCard(d)).join('')}</div>
         `;
 
     } catch (error) {
-        console.error("エラーが発生しました:", error);
-        listContainer.innerHTML = `<p style="text-align:center; color:red;">データの取得に失敗しました。トークンの期限切れか、APIの設定を確認してください。</p>`;
+        console.error("エラー:", error);
     }
 }
 
-// カードの見た目を作る補助関数
 function renderCard(d) {
     const isLive = !!d.live;
     return `
-        <a href="https://twitch.tv/${d.id}" target="_blank" class="card ${isLive ? 'live' : ''}">
-            <img src="${d.icon}" class="avatar" alt="${d.name}">
-            <div class="info">
-                <div class="name-row">
-                    <span class="name">${d.name}</span>
-                    <span class="label ${isLive ? 'label-live' : 'label-off'}">${isLive ? 'LIVE' : 'OFFLINE'}</span>
+        <div class="card ${isLive ? 'live' : ''}">
+            <a href="https://twitch.tv/${d.id}" target="_blank" style="text-decoration:none; color:inherit; display:flex;">
+                <img src="${d.icon}" class="avatar">
+                <div class="info">
+                    <div class="name-row">
+                        <span class="name">${d.displayName}</span>
+                        <span class="label ${isLive ? 'label-live' : 'label-off'}">${isLive ? 'LIVE' : 'OFFLINE'}</span>
+                    </div>
+                    ${isLive ? `
+                        <div class="game">${d.live.game_name}</div>
+                        <div class="stream-title">${d.live.title}</div>
+                        <div class="viewers">${d.live.viewer_count.toLocaleString()} 人</div>
+                    ` : `<div style="color:#555; font-size:0.8em; margin-top:5px;">@${d.id}</div>`}
                 </div>
-                ${isLive ? `
-                    <div class="game">${d.live.game_name}</div>
-                    <div class="stream-title">${d.live.title}</div>
-                    <div class="viewers">${d.live.viewer_count.toLocaleString()} 人</div>
-                ` : `
-                    <div style="color:#555; font-size:0.8em; margin-top:5px;">@${d.id}</div>
-                `}
-            </div>
-        </a>
+            </a>
+            
+            ${d.clip ? `
+                <div style="margin-top:15px; border-top:1px solid #333; padding-top:10px;">
+                    <div style="font-size:0.75em; color:#9146ff; font-weight:bold; margin-bottom:5px;">🔥 人気クリップ</div>
+                    <a href="${d.clip.url}" target="_blank" style="text-decoration:none;">
+                        <img src="${d.clip.thumbnail_url}" style="width:100%; border-radius:4px; margin-bottom:5px;">
+                        <div style="font-size:0.75em; color:#efeff1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            ${d.clip.title}
+                        </div>
+                    </a>
+                </div>
+            ` : ''}
+        </div>
     `;
 }
 
-// 実行
 updateLiveStatus();
-// 5分ごとに自動更新
 setInterval(updateLiveStatus, 5 * 60 * 1000);
