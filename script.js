@@ -1,5 +1,5 @@
 const CLIENT_ID = 'pl16vkiwvra455r0bd35vw1jlxaoe9'; 
-const ACCESS_TOKEN = '6gz8vdeee0u7w1yy26zon3ovey18tu'; 
+const ACCESS_TOKEN = '6gz8vdeee0u7w1yy26zon3ovey18tu'; // 定期的に更新が必要
 
 async function updateLiveStatus() {
     const listContainer = document.getElementById('list');
@@ -33,7 +33,6 @@ async function updateLiveStatus() {
             return { ...s, u, live, clip, viewCount: u ? parseInt(u.view_count) : 0 };
         }));
 
-        // 並び順は変えず（同接順/再生数順）
         const liveList = fullData.filter(d => d.live).sort((a, b) => b.live.viewer_count - a.live.viewer_count);
         const offlineList = fullData.filter(d => !d.live).sort((a, b) => b.viewCount - a.viewCount);
 
@@ -50,24 +49,30 @@ function renderRow(d) {
     const isLive = !!d.live;
     const name = d.u ? d.u.display_name : d.name;
     const icon = d.u ? d.u.profile_image_url : '';
-    const thumb = isLive ? d.live.thumbnail_url.replace('{width}','320').replace('{height}','180') : 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
 
     return `
         <a href="https://twitch.tv/${d.id}" target="_blank" class="item">
-            <div class="thumb-area">
-                <img src="${thumb}" class="live-img">
-            </div>
+            ${isLive ? `
+                <div class="thumb-area">
+                    <img src="${d.live.thumbnail_url.replace('{width}','320').replace('{height}','180')}" class="live-img">
+                </div>
+            ` : ''}
+
             <div class="avatar-area">
                 <img src="${icon}" class="avatar">
             </div>
+
             <div class="info-area">
                 <div class="name-row">
                     <span class="name">${name}</span>
                 </div>
-                <span class="stream-title">${isLive ? d.live.title : '（オフライン）'}</span>
-                <div class="meta-info">
-                    ${isLive ? `ゲーム: ${d.live.game_name}` : `ID: @${d.id}`}
-                </div>
+                ${isLive ? `
+                    <span class="stream-title">${d.live.title}</span>
+                    <div class="meta-info">ゲーム: ${d.live.game_name}</div>
+                ` : `
+                    <div class="meta-info">オフライン (再生数: ${d.viewCount.toLocaleString()})</div>
+                `}
+                
                 ${d.clip ? `
                     <div class="clip-row">
                         <img src="${d.clip.thumbnail_url}" class="clip-thumb">
@@ -75,8 +80,9 @@ function renderRow(d) {
                     </div>
                 ` : ''}
             </div>
+
             <div class="count-area">
-                <div class="viewer-num">${isLive ? d.live.viewer_count.toLocaleString() : '-'}</div>
+                ${isLive ? `<div class="viewer-num">${d.live.viewer_count.toLocaleString()}</div>` : ''}
             </div>
         </a>
     `;
