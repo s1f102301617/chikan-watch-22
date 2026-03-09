@@ -4,175 +4,138 @@ body {
     color: #efeff1; 
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
     margin: 0; 
-    padding: 20px; 
+    padding: 10px; 
 }
 
 h1 { 
-    text-align: center; 
-    color: #9146ff; 
-    margin-bottom: 30px;
-    text-shadow: 0 0 10px rgba(145, 70, 255, 0.4);
+    font-size: 1.5em;
+    padding-left: 10px;
+    border-left: 5px solid #9146ff;
+    margin: 20px 0;
 }
 
 .section-title { 
-    border-bottom: 2px solid #333; 
-    margin: 40px 0 20px; 
-    padding-bottom: 10px; 
-    font-size: 1.3em; 
+    background: #18181b;
+    padding: 8px 15px;
+    margin: 20px 0 10px; 
+    font-size: 0.9em; 
     color: #adadb8; 
     font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-.grid { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
-    gap: 20px; 
-}
-
-/* カードのデザイン */
-.card { 
-    background: #1f1f23; 
-    border-radius: 12px; 
-    padding: 16px; 
-    transition: all 0.2s ease; 
-    border: 1px solid #2f2f35;
+/* リストコンテナ */
+.stream-list { 
     display: flex;
     flex-direction: column;
+    gap: 2px; /* 行間を詰めると格ゲーチェッカー感が出ます */
 }
 
-.card:hover { 
-    background: #26262c; 
-    border-color: #9146ff; 
-    transform: translateY(-4px); 
-    box-shadow: 0 8px 24px rgba(0,0,0,0.7);
-}
-
-.card.live { 
-    border-left: 5px solid #e91916; 
-}
-
-/* 配信者情報リンク */
-.streamer-link {
-    text-decoration: none !important;
-    color: #efeff1 !important;
+/* 1行のアイテム */
+.item { 
+    background: #1f1f23; 
     display: flex;
     align-items: center;
-    margin-bottom: 12px;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.1s;
+    border-bottom: 1px solid #0e0e10;
+}
+
+.item:hover { 
+    background: #26262c; 
+}
+
+/* 左側：アイコンと名前 */
+.user-area {
+    display: flex;
+    align-items: center;
+    width: 220px; /* 名前エリアの幅を固定して縦を揃える */
+    flex-shrink: 0;
 }
 
 .avatar { 
-    width: 50px; 
-    height: 50px; 
+    width: 32px; 
+    height: 32px; 
     border-radius: 50%; 
-    margin-right: 12px; 
-    background: #333; 
-    flex-shrink: 0;
-    border: 2px solid #333;
-}
-
-.info { flex: 1; min-width: 0; }
-
-.name-row { 
-    display: flex; 
-    align-items: center; 
-    justify-content: space-between; 
+    margin-right: 12px;
 }
 
 .name { 
     font-weight: bold; 
-    font-size: 1.1em; 
-    white-space: nowrap; 
-    overflow: hidden; 
-    text-overflow: ellipsis;
-}
-
-/* ライブ用サムネイル画像 */
-.live-thumb {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    background-color: #000;
-    border-radius: 8px;
-    margin-bottom: 8px;
-    border: 1px solid #444;
-    object-fit: cover;
-    display: block;
-}
-
-.game { 
-    color: #bf94ff; 
-    font-size: 0.85em; 
-    font-weight: bold;
-    margin-bottom: 4px; 
-}
-
-.stream-title { 
-    font-size: 0.8em; 
-    color: #efeff1; 
-    line-height: 1.4; 
-    display: -webkit-box; 
-    -webkit-line-clamp: 2; 
-    -webkit-box-orient: vertical; 
-    overflow: hidden; 
-    margin-bottom: 6px;
-}
-
-.viewers { 
-    color: #e91916; 
-    font-size: 0.8em; 
-    font-weight: bold; 
-    margin-bottom: 10px;
-}
-
-.followers {
-    font-size: 0.75em;
-    color: #adadb8;
-    margin-top: 4px;
-}
-
-/* クリップセクション */
-.clip-section {
-    margin-top: auto; 
-    border-top: 1px solid #333;
-    padding-top: 12px;
-}
-
-.clip-label {
-    font-size: 0.7em;
-    color: #9146ff;
-    font-weight: bold;
-    margin-bottom: 8px;
-    display: block;
-}
-
-.clip-link {
-    text-decoration: none;
-    display: block;
-}
-
-.clip-thumb-img {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    background-size: cover;
-    background-position: center;
-    border-radius: 6px;
-    margin-bottom: 6px;
-}
-
-.clip-title {
-    font-size: 0.75em;
-    color: #adadb8;
+    font-size: 0.95em; 
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* ラベル */
-.label { 
-    font-size: 0.65em; 
-    padding: 2px 6px; 
-    border-radius: 4px; 
+/* 中央：配信情報 */
+.content-area {
+    flex: 1;
+    min-width: 0;
+    padding: 0 15px;
+    display: flex;
+    flex-direction: column;
 }
-.label-live { background: #e91916; color: white; }
-.label-off { background: #333; color: #adadb8; }
 
-#loading-msg { text-align: center; margin-top: 50px; color: #adadb8; }
+.game-name { 
+    font-size: 0.8em; 
+    color: #bf94ff; 
+    font-weight: bold;
+}
+
+.stream-title { 
+    font-size: 0.85em; 
+    color: #efeff1; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 右側：数字とサムネイル */
+.stats-area {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-shrink: 0;
+}
+
+.viewers {
+    font-family: monospace;
+    font-weight: bold;
+    color: #e91916;
+    font-size: 1em;
+    width: 70px;
+    text-align: right;
+}
+
+.live-thumb {
+    width: 100px;
+    aspect-ratio: 16 / 9;
+    border-radius: 2px;
+    object-fit: cover;
+    background: #000;
+}
+
+.clip-thumb {
+    width: 60px;
+    aspect-ratio: 16 / 9;
+    border-radius: 2px;
+    opacity: 0.6;
+}
+
+.label-off {
+    font-size: 0.7em;
+    color: #555;
+    background: #2f2f35;
+    padding: 1px 4px;
+    border-radius: 2px;
+}
+
+/* スマホ対応 */
+@media (max-width: 768px) {
+    .user-area { width: 140px; }
+    .live-thumb, .clip-thumb { display: none; }
+}

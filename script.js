@@ -13,104 +13,72 @@ async function updateLiveStatus() {
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         const startedAt = sevenDaysAgo.toISOString();
 
-        // 1. ユーザー情報（アイコン・総再生数）
-        const userQuery = ids.map(id => `login=${id}`).join('&');
-        const resUsers = await fetch(`https://api.twitch.tv/helix/users?${userQuery}`, {
+        const userRes = await fetch(`https://api.twitch.tv/helix/users?${ids.map(id => `login=${id}`).join('&')}`, {
             headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${ACCESS_TOKEN}` }
         });
-        const userData = await resUsers.json();
-        const usersInfo = userData.data || [];
+        const users = (await userRes.json()).data || [];
 
-        // 2. 配信情報（視聴者数・サムネ）
-        const streamQuery = ids.map(id => `user_login=${id}`).join('&');
-        const resTwitch = await fetch(`https://api.twitch.tv/helix/streams?${streamQuery}`, {
+        const streamRes = await fetch(`https://api.twitch.tv/helix/streams?${ids.map(id => `user_login=${id}`).join('&')}`, {
             headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${ACCESS_TOKEN}` }
         });
-        const twitchData = await resTwitch.json();
-        const liveStreams = twitchData.data || [];
+        const liveStreams = (await streamRes.json()).data || [];
 
-        // 3. 各自のデータを統合・クリップ取得
         const fullData = await Promise.all(streamers.map(async (s) => {
-            const userInfo = usersInfo.find(u => u.login === s.id);
-            const liveInfo = liveStreams.find(ls => ls.user_login === s.id);
-            
-            let topClip = null;
-            if (userInfo) {
-                const clipRes = await fetch(`https://api.twitch.tv/helix/clips?broadcaster_id=${userInfo.id}&started_at=${startedAt}&first=1`, {
+            const u = users.find(user => user.login === s.id);
+            const live = liveStreams.find(ls => ls.user_login === s.id);
+            let clip = null;
+            if (u) {
+                const clipRes = await fetch(`https://api.twitch.tv/helix/clips?broadcaster_id=${u.id}&started_at=${startedAt}&first=1`, {
                     headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${ACCESS_TOKEN}` }
                 });
                 const clipData = await clipRes.json();
-                if (clipData.data && clipData.data.length > 0) {
-                    topClip = clipData.data[0];
-                }
+                if (clipData.data && clipData.data.length > 0) clip = clipData.data[0];
             }
-
-            return {
-                displayName: userInfo ? userInfo.display_name : s.name,
-                id: s.id,
-                live: liveInfo,
-                icon: userInfo ? userInfo.profile_image_url : '',
-                clip: topClip,
-                // オフライン時の並び替え指標（総再生数）
-                viewCount: userInfo ? parseInt(userInfo.view_count) : 0
-            };
+            return { ...s, u, live, clip, viewCount: u ? parseInt(u.view_count) : 0 };
         }));
 
-        // 4. 並び替え：配信中は同接順、オフラインは再生数順
         const liveList = fullData.filter(d => d.live).sort((a, b) => b.live.viewer_count - a.live.viewer_count);
         const offlineList = fullData.filter(d => !d.live).sort((a, b) => b.viewCount - a.viewCount);
 
         listContainer.innerHTML = `
-            <div class="section-title">配信中 (${liveList.length})</div>
-            <div class="grid">${liveList.map(d => renderCard(d)).join('') || '<p style="padding:20px; color:#888;">現在配信中のメンバーはいません</p>'}</div>
-            
-            <div class="section-title">オフライン</div>
-            <div class="grid">${offlineList.map(d => renderCard(d)).join('')}</div>
+            <div class="section-title">Online</div>
+            <div class="stream-list">${liveList.map(d => renderRow(d)).join('') || '<p style="padding:10px;color:#555;">No one is live</p>'}</div>
+            <div class="section-title">Offline</div>
+            <div class="stream-list">${offlineList.map(d => renderRow(d)).join('')}</div>
         `;
 
-    } catch (error) {
-        console.error("エラー:", error);
-    }
+    } catch (e) { console.error(e); }
 }
 
-function renderCard(d) {
+function renderRow(d) {
     const isLive = !!d.live;
-    let thumbUrl = "";
-    if (isLive) {
-        thumbUrl = d.live.thumbnail_url.replace('{width}', '400').replace('{height}', '225');
-    }
+    const name = d.u ? d.u.display_name : d.name;
+    const icon = d.u ? d.u.profile_image_url : '';
 
     return `
-        <div class="card ${isLive ? 'live' : ''}">
-            <a href="https://twitch.tv/${d.id}" target="_blank" class="streamer-link">
-                <img src="${d.icon}" class="avatar">
-                <div class="info">
-                    <div class="name-row">
-                        <span class="name">${d.displayName}</span>
-                        <span class="label ${isLive ? 'label-live' : 'label-off'}">${isLive ? 'LIVE' : 'OFFLINE'}</span>
-                    </div>
-                    ${isLive ? `<div class="game">${d.live.game_name}</div>` : `<div style="color:#555; font-size:0.8em;">@${d.id}</div>`}
-                </div>
-            </a>
-
-            ${isLive ? `
-                <a href="https://twitch.tv/${d.id}" target="_blank" style="text-decoration:none; color:inherit;">
-                    <img src="${thumbUrl}" class="live-thumb">
-                    <div class="stream-title">${d.live.title}</div>
-                    <div class="viewers">● ${d.live.viewer_count.toLocaleString()} 人</div>
-                </a>
-            ` : `<div class="stats">総再生数: ${d.viewCount.toLocaleString()}</div>`}
-            
-            ${d.clip ? `
-                <div class="clip-section">
-                    <span class="clip-label">🔥 直近7日間の人気クリップ</span>
-                    <a href="${d.clip.url}" target="_blank" class="clip-link">
-                        <div class="clip-thumb-img" style="background-image: url('${d.clip.thumbnail_url}');"></div>
-                        <div class="clip-title">${d.clip.title}</div>
-                    </a>
-                </div>
-            ` : ''}
-        </div>
+        <a href="https://twitch.tv/${d.id}" target="_blank" class="item">
+            <div class="user-area">
+                <img src="${icon}" class="avatar">
+                <span class="name">${name}</span>
+            </div>
+            <div class="content-area">
+                ${isLive ? `
+                    <span class="game-name">${d.live.game_name}</span>
+                    <span class="stream-title">${d.live.title}</span>
+                ` : `
+                    <span class="stream-title" style="color:#555;">@${d.id}</span>
+                `}
+            </div>
+            <div class="stats-area">
+                ${isLive ? `
+                    <span class="viewers">${d.live.viewer_count.toLocaleString()}</span>
+                    <img src="${d.live.thumbnail_url.replace('{width}','160').replace('{height}','90')}" class="live-thumb">
+                ` : `
+                    <span class="label-off">OFFLINE</span>
+                `}
+                ${d.clip ? `<img src="${d.clip.thumbnail_url}" class="clip-thumb" title="Recent Clip: ${d.clip.title}">` : ''}
+            </div>
+        </a>
     `;
 }
 
